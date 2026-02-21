@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  ghost:
+    image: ghost:5.101-alpine
+    restart: unless-stopped
+    environment:
+      # URL de l'application Ghost. Important pour les liens générés.
+      URL: ${GHOST_URL:-http://localhost:8080}
+      # Type de base de données. Ne pas changer.
+      DATABASE_CLIENT: ${GHOST_DATABASE_CLIENT:-mysql}
+      # Nom d'utilisateur pour la base de données.
+      DATABASE_CONNECTION__USER: ${GHOST_DB_USER:-ghost}
+      # Mot de passe pour la base de données.
+      DATABASE_CONNECTION__PASSWORD: ${GHOST_DB_PASSWORD:-supersecretpassword}
+      # Hôte de la base de données (nom du service Docker).
+      DATABASE_CONNECTION__HOST: ${GHOST_DB_HOST:-db}
+      # Nom de la base de données.
+      DATABASE_CONNECTION__DATABASE: ${GHOST_DB_NAME:-ghost}
+      # Port de la base de données.
+      DATABASE_CONNECTION__PORT: ${GHOST_DB_PORT:-3306}
+      # Configuration du stockage des fichiers (local par défaut).
+      STORAGE_ADAPTER: ${GHOST_STORAGE_ADAPTER:-local-file-store}
+      # Clé secrète pour les cookies et la sécurité.
+      GHOST_SECRET: ${GHOST_SECRET:-a_very_long_and_random_secret_string_for_ghost_security}
+      # Environnement de production par défaut.
+      NODE_ENV: ${NODE_ENV:-production}
+    ports:
+      - "${GHOST_PORT:-8080}:2368"
+    volumes:
+      - ghost_content:/var/lib/ghost/content
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2368/ghost/api/admin/site/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - ghost-network
+
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      # Mot de passe root pour MySQL. À changer en production.
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      # Nom de la base de données pour Ghost.
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ghost}
+      # Nom d'utilisateur pour la base de données Ghost.
+      MYSQL_USER: ${MYSQL_USER:-ghost}
+      # Mot de passe pour l'utilisateur Ghost.
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-supersecretpassword}
+    volumes:
+      - ghost_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ghost-network
+
+volumes:
+  ghost_content:
+  ghost_db:
+
+networks:
+  ghost-network:
+    driver: bridge
