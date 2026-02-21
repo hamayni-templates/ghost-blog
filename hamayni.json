@@ -1,0 +1,137 @@
+{
+  "contract_version": "1.1.0",
+  "template_id": "ghost-blog",
+  "template_version": "1.0.0",
+  "name": "Ghost Blog",
+  "description": "Ghost est une plateforme de publication open source puissante et flexible, conçue pour les blogueurs et les éditeurs professionnels.",
+  "artifact_type": "docker_stack",
+  "source_ref": {
+    "type": "tag",
+    "value": "v1.0.0"
+  },
+  "prerequisites": [
+    "docker",
+    "docker-compose"
+  ],
+  "runtime": {
+    "kind": "docker-compose",
+    "compose_file": "docker-compose.yml",
+    "ports": {
+      "http": 8080
+    }
+  },
+  "env": [
+    {
+      "name": "GHOST_URL",
+      "required": true,
+      "description": "L'URL complète de votre blog Ghost. Important pour les liens générés et le bon fonctionnement de Ghost.",
+      "default": "http://localhost:8080"
+    },
+    {
+      "name": "GHOST_PORT",
+      "required": false,
+      "description": "Le port sur lequel Ghost sera accessible depuis l'extérieur.",
+      "default": "8080"
+    },
+    {
+      "name": "GHOST_DB_USER",
+      "required": true,
+      "description": "Nom d'utilisateur pour la base de données Ghost.",
+      "default": "ghost"
+    },
+    {
+      "name": "GHOST_DB_PASSWORD",
+      "required": true,
+      "description": "Mot de passe pour l'utilisateur de la base de données Ghost.",
+      "default": "supersecretpassword"
+    },
+    {
+      "name": "GHOST_DB_NAME",
+      "required": true,
+      "description": "Nom de la base de données Ghost.",
+      "default": "ghost"
+    },
+    {
+      "name": "MYSQL_ROOT_PASSWORD",
+      "required": true,
+      "description": "Mot de passe root pour le serveur MySQL. À changer impérativement en production.",
+      "default": "rootpassword"
+    },
+    {
+      "name": "GHOST_SECRET",
+      "required": true,
+      "description": "Clé secrète utilisée par Ghost pour la sécurité des cookies et des sessions. Générez une chaîne longue et aléatoire.",
+      "default": "a_very_long_and_random_secret_string_for_ghost_security"
+    },
+    {
+      "name": "NODE_ENV",
+      "required": false,
+      "description": "Environnement d'exécution de Node.js (production ou development).",
+      "default": "production"
+    }
+  ],
+  "health": {
+    "checks": [
+      {
+        "path": "http://localhost:8080/",
+        "expected_status": 200,
+        "timeout_s": 60
+      },
+      {
+        "path": "http://localhost:8080/ghost",
+        "expected_status": 200,
+        "timeout_s": 60
+      }
+    ],
+    "success_policy": "all"
+  },
+  "policies": {
+    "strict_mode": true,
+    "ban_latest": true,
+    "infra_requires_tag_or_commit": false
+  },
+  "credentials_spec": [
+    {
+      "key": "GHOST_URL",
+      "label": "URL du blog Ghost",
+      "computed": "${PROTOCOL}://${DOMAIN}"
+    },
+    {
+      "key": "GHOST_ADMIN_URL",
+      "label": "URL d'administration Ghost",
+      "computed": "${PROTOCOL}://${DOMAIN}/ghost"
+    },
+    {
+      "key": "GHOST_DB_USER",
+      "label": "Utilisateur de la base de données Ghost",
+      "from_env": "GHOST_DB_USER",
+      "fallback": "ghost"
+    },
+    {
+      "key": "GHOST_DB_PASSWORD",
+      "label": "Mot de passe de la base de données Ghost",
+      "from_env": "GHOST_DB_PASSWORD",
+      "generated": true,
+      "hidden": true
+    },
+    {
+      "key": "MYSQL_ROOT_PASSWORD",
+      "label": "Mot de passe Root MySQL",
+      "from_env": "MYSQL_ROOT_PASSWORD",
+      "generated": true,
+      "hidden": true
+    }
+  ],
+  "postInstall": [
+    {
+      "type": "shell",
+      "cmd": "echo 'Ghost est prêt ! Accédez à votre blog via l\\'URL fournie et configurez votre compte administrateur.'"
+    },
+    {
+      "type": "shell",
+      "cmd": "echo 'N\\'oubliez pas de changer les mots de passe par défaut pour la base de données et le root MySQL.'"
+    }
+  ],
+  "minAgentVersion": "2.5.0",
+  "tested": true
+}
